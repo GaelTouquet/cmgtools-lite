@@ -18,7 +18,7 @@ def getHeppyOption(option, default):
 # Get all heppy options; set via '-o production' or '-o production=True'
 
 # production = True run on batch, production = False (or unset) run locally
-production = getHeppyOption('production', True)
+production = getHeppyOption('production', False)
 pick_events = getHeppyOption('pick_events', False)
 
 
@@ -62,6 +62,13 @@ tauIDTreeProducer = cfg.Analyzer(
     name='tauIDTreeProducer'
 )
 
+from CMGTools.H2TauTau.proto.analyzers.TestTreeProducer import TestTreeProducer
+
+testTreeProducer = cfg.Analyzer(
+    TestTreeProducer,
+    name='TestTreeProducer'
+)
+
 from PhysicsTools.Heppy.analyzers.core.JSONAnalyzer import JSONAnalyzer
 jsonAna = cfg.Analyzer(
     JSONAnalyzer,
@@ -72,13 +79,24 @@ jsonAna = cfg.Analyzer(
 ### CONNECT SAMPLES TO THEIR ALIASES AND FILES  ###
 ###################################################
 from CMGTools.RootTools.utils.splitFactor import splitFactor
-from CMGTools.H2TauTau.proto.samples.tauID.tauID_samples import mc_higgs_susy_gg, mc_higgs_susy_bb, QCDPt
+from CMGTools.H2TauTau.proto.samples.tauID.tauID_samples import mc_higgs_susy_gg, mc_higgs_susy_bb, QCDPt, DY
 
 # QCD[0].files = QCD[0].files[:4]
+for s in mc_higgs_susy_gg + mc_higgs_susy_bb + DY:
+    s.is_signal = True
 
-samples = QCDPt# [x for x in mc_higgs_susy_gg + mc_higgs_susy_bb if x.name in ['HiggsSUSYBB'+y for y in ['1000','130','1500','2000','2300','250','2900','3200','800']]+['HiggsSUSYGG'+y for y in ['1200','1600','2600','2900','500','80','800']]]# +QCD
+for s in QCDPt:
+    s.is_signal = False
 
+samples = mc_higgs_susy_gg#[x for x in  if x.name=='QCD_Pt15to30']#mc_higgs_susy_gg + mc_higgs_susy_bb + DY## [x for x in mc_higgs_susy_gg + mc_higgs_susy_bb if x.name in ['HiggsSUSYBB'+y for y in ['1000','130','1500','2000','2300','250','2900','3200','800']]+['HiggsSUSYGG'+y for y in ['1200','1600','2600','2900','500','80','800']]]# +QCD
 
+# # import pdb;pdb.set_trace()
+# from CMGTools.RootTools.samples.test import QCD_Pt300to470_ext
+# QCD_Pt300to470_ext.is_signal=False
+# samples = [QCD_Pt300to470_ext]
+
+for s in samples:
+    s.files = [s.files[0]]
 
 split_factor = 1e4
 
@@ -109,7 +127,8 @@ selectedComponents = samples
 sequence = [jsonAna,
             pileUpAna,
             tauIDSelector,
-            tauIDTreeProducer]
+            # tauIDTreeProducer]
+            testTreeProducer]
 # VertexAna,
 
 
@@ -155,10 +174,10 @@ outputService = []
 ###            SET BATCH OR LOCAL               ###
 ###################################################
 # if production:
-    # selectedComponents = [selectedComponents[-1]]
-    # for comp in selectedComponents:
-    #     comp.files = [comp.files[:5]]
-#         # comp.files = ['root://cms-xrd-global.cern.ch/'+f[30:] for f in comp.files]
+#     # selectedComponents = [selectedComponents[-1]]
+#     for comp in selectedComponents:
+#         comp.files = [comp.files[0]]
+#         comp.files = ['root://cms-xrd-global.cern.ch/'+f[30:] for f in comp.files]
 #         # comp.splitFactor = 1
 #         # comp.fineSplitFactor = 1
 
@@ -166,7 +185,7 @@ if not production:
     for comp in selectedComponents:
         comp.files = [comp.files[0]]
         # comp.files = ['root://cms-xrd-global.cern.ch/'+f[30:] for f in comp.files]
-    selectedComponents = [selectedComponents[0]]
+    selectedComponents = [selectedComponents[-1]]
     for comp in selectedComponents:
         comp.splitFactor = 1
         comp.fineSplitFactor = 1

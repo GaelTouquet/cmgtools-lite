@@ -19,6 +19,8 @@ class TauIDTreeProducer(H2TauTauTreeProducerBase):
         # declare jet + constituents
         self.bookParticle(self.tree, 'Jet')
         self.var(self.tree, 'Jet_nconstituents')
+        self.var(self.tree, 'Jet_hadronFlavour')
+        self.var(self.tree, 'Jet_partonFlavour')
         for i in range(200):
             self.bookParticle(self.tree, 'ptc_{}'.format(i))
             self.var(self.tree, 'ptc_{}_pdgid'.format(i))
@@ -54,7 +56,7 @@ class TauIDTreeProducer(H2TauTauTreeProducerBase):
 
         #other useful
         self.var(self.tree, 'isSignal')
-        self.var(self.tree, 'nPU')
+        # self.var(self.tree, 'nPU')
         
         # declare taugenjet + constituents
         
@@ -70,6 +72,11 @@ class TauIDTreeProducer(H2TauTauTreeProducerBase):
 
         # turn over the jets of the event
         for jet in event.jets:
+            isSignal = (hasattr(jet,'gen_tau') and jet.gen_tau and jet.gen_tau_dr<0.3)
+            if self.cfg_comp.is_signal and (not isSignal):
+                continue # skip if is a jet in signal sample
+            if (not self.cfg_comp.is_signal) and isSignal:
+                continue # skip if is a genuine tau in QCD sample
 
             self.tree.reset()
 
@@ -78,8 +85,13 @@ class TauIDTreeProducer(H2TauTauTreeProducerBase):
             self.fill(self.tree, 'run', event.run)
             
             self.fillParticle(self.tree, 'Jet', jet)
+            # import pdb;pdb.set_trace()
             ndaughter = jet.numberOfDaughters()
             self.fill(self.tree, 'Jet_nconstituents', ndaughter)
+            if hasattr(jet, 'hadronFlavour') and jet.hadronFlavour():
+                self.fill(self.tree, 'Jet_hadronFlavour', jet.hadronFlavour())
+            if hasattr(jet, 'partonFlavour') and jet.partonFlavour():
+                self.fill(self.tree, 'Jet_partonFlavour', jet.partonFlavour())
             if ndaughter>200:
                 ndaughter=200
             for i in range(ndaughter):
@@ -130,12 +142,12 @@ class TauIDTreeProducer(H2TauTauTreeProducerBase):
                 self.fill(self.tree, 'againstElectronVLooseMVA6', jet.tau.tauID('againstElectronVLooseMVA6'))
                 self.fill(self.tree, 'againstMuonLoose3', jet.tau.tauID('againstMuonLoose3'))
 
-            if hasattr(jet,'gen_tau') and jet.gen_tau and jet.gen_tau_dr<0.2:
+            if hasattr(jet,'gen_tau') and jet.gen_tau and jet.gen_tau_dr<0.3:
                 self.fill(self.tree, 'isSignal', 1.)
             else:
                 self.fill(self.tree, 'isSignal', 0.)
 
-            if hasattr(event, 'nPU') and event.nPU:
-                self.var(self.tree, 'nPU')
+            # if hasattr(event, 'nPU') and event.nPU:
+            #     self.var(self.tree, 'nPU')
 
             self.fillTree(event)

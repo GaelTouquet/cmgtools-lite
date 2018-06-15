@@ -1,4 +1,5 @@
 from CMGTools.RootTools.samples.ComponentCreator import ComponentCreator
+from CMGTools.RootTools.samples.samples_13TeV_RunIISummer16MiniAODv2 import DYNJets, DYJetsToLL_M10to50_LO, DYJetsToLL_M50_LO_ext2, DYJetsToLL_M50_LO_ext
 
 creator = ComponentCreator()
 
@@ -202,6 +203,10 @@ mc_higgs_susy_bb = [
     HiggsSUSYBB2900,
     HiggsSUSYBB3200
 ]
+
+###DY
+
+DY = DYNJets + [DYJetsToLL_M10to50_LO, DYJetsToLL_M50_LO_ext2, DYJetsToLL_M50_LO_ext]
 
 
 ###QCD
